@@ -20,48 +20,6 @@ DOWNLOAD_URL = (
     "?data=sample_information&study_id=10317"
 )
 
-# Alle Kohortendefinitionen lassen sich hier erweitern.
-#general_criteria = [
-#    # Sample type
-#    ("host_body_site", ["UBERON:feces"]),
-#
-#    # Other diseases: explicitly absent or not provided/collected
-#    ("lung_disease",["I do not have this condition"]),
-#    ("ibd_diagnosis_refined",["not provided", "not applicable"]),
-#    ("skin_condition",["I do not have this condition"]),
-#    ("alzheimers",["I do not have this condition"]),
-#    ("diabetes",["I do not have this condition"]),
-#    ("pku",["I do not have this condition"]),
-#    ("fungal_overgrowth",["I do not have this condition", "not provided"]),
-#    ("kidney_disease",["I do not have this condition"]),
-#    ("migraine",["I do not have this condition"]),
-#    ("cardiovascular_disease",["I do not have this condition"]),
-#    ("ibd",["I do not have this condition"]),
-#    ("clinical_condition",["I do not have this condition"]),
-#    ("liver_disease",["I do not have this condition"]),
-#    ("autoimmune",["I do not have this condition"]),
-#    ("ibs",["I do not have this condition"]),
-#    ("diabetes_type",["not provided"]),
-#    ("cancer",["I do not have this condition", "not provided"]),
-#    # Mental illness
-#    ("epilepsy_or_seizure_disorder", ["I do not have this condition", "not collected", "not provided"]),
-#    ("mental_illness_type_anorexia_nervosa", ["false", "not collected", "not applicable"]),
-#    ("mental_illness_type_schizophrenia", ["false", "not collected", "not applicable"]),
-#    ("mental_illness_type_bipolar_disorder", ["false", "not collected", "not applicable"]),
-#    ("mental_illness_type_substance_abuse", ["false", "not collected", "not applicable"]),
-#    #("depression_bipolar_schizophrenia", ["I do not have this condition", "not collected", "not provided"]),
-#    ("mental_illness_type_ptsd_post_traumatic_stress_disorder", ["false", "not collected", "not applicable"]),
-#    ("mental_illness_type_unspecified", ["false", "not collected", "not applicable"]),
-#    ("add_adhd", ["I do not have this condition", "not collected", "not provided", "not applicable"]),
-#    ("asd", ["I do not have this condition", "not collected", "not provided", "not applicable"]),
-#    ("mental_illness_type_bulimia_nervosa", ["false", "not collected", "not applicable"]),
-#    # Antibiotic history
-#    ("antibiotic_history", ["I have not taken antibiotics in the past year.", "Year", "not collected", "not provided", "not applicable"]),
-#]
-#14000 ganz ohne antibiotika 9000 antibiotika streng 12000 antibiotika locker
-#missing values filter nichts verändert
-#sql mässig prüfen wie viel menschen eine krankheit haben
-
 # Common representations of missing values in metadata
 MISSING_VALUES = [
     None,
@@ -85,23 +43,23 @@ general_criteria = [
     ("host_body_site", ["UBERON:feces"]),
 
     # Other diseases: explicitly absent or missing
-    #("lung_disease", ["I do not have this condition"] + MISSING_VALUES),
-    ##("ibd_diagnosis_refined", MISSING_VALUES),
-    #("skin_condition", ["I do not have this condition"] + MISSING_VALUES),
-    #("alzheimers", ["I do not have this condition"] + MISSING_VALUES),
-    #("diabetes", ["I do not have this condition"] + MISSING_VALUES),
-    #("pku", ["I do not have this condition"] + MISSING_VALUES),
-    #("fungal_overgrowth", ["I do not have this condition"] + MISSING_VALUES),
-    #("kidney_disease", ["I do not have this condition"] + MISSING_VALUES),
-    #("migraine", ["I do not have this condition"] + MISSING_VALUES),
-    #("cardiovascular_disease", ["I do not have this condition"] + MISSING_VALUES),
-    #("ibd", ["I do not have this condition"] + MISSING_VALUES),
-    #("clinical_condition", ["I do not have this condition"] + MISSING_VALUES),
-    #("liver_disease", ["I do not have this condition"] + MISSING_VALUES),
-    #("autoimmune", ["I do not have this condition"] + MISSING_VALUES),
-    #("ibs", ["I do not have this condition"] + MISSING_VALUES),
+    ("lung_disease", ["I do not have this condition"] + MISSING_VALUES),
+    #("ibd_diagnosis_refined", MISSING_VALUES),
+    ("skin_condition", ["I do not have this condition"] + MISSING_VALUES),
+    ("alzheimers", ["I do not have this condition"] + MISSING_VALUES),
+    ("diabetes", ["I do not have this condition"] + MISSING_VALUES),
+    ("pku", ["I do not have this condition"] + MISSING_VALUES),
+    ("fungal_overgrowth", ["I do not have this condition"] + MISSING_VALUES),
+    ("kidney_disease", ["I do not have this condition"] + MISSING_VALUES),
+    ("migraine", ["I do not have this condition"] + MISSING_VALUES),
+    ("cardiovascular_disease", ["I do not have this condition"] + MISSING_VALUES),
+    ("ibd", ["I do not have this condition"] + MISSING_VALUES),
+    ("clinical_condition", ["I do not have this condition"] + MISSING_VALUES),
+    ("liver_disease", ["I do not have this condition"] + MISSING_VALUES),
+    ("autoimmune", ["I do not have this condition"] + MISSING_VALUES),
+    ("ibs", ["I do not have this condition"] + MISSING_VALUES),
     #("diabetes_type", MISSING_VALUES),
-    #("cancer", ["I do not have this condition"] + MISSING_VALUES),
+    ("cancer", ["I do not have this condition"] + MISSING_VALUES),
 
     # Mental illness
     ("epilepsy_or_seizure_disorder", ["I do not have this condition"] + MISSING_VALUES),
@@ -125,12 +83,11 @@ COHORTS = {
     "depression_case": {
         "criteria": [
             ("mental_illness_type_depression", ["true"]),
-            #("mental_illness", ["No", "not provided"])
         ],
     },
     "control": {
         "criteria": [
-            ("mental_illness_type_depression", ["false", "not collected"]),
+            ("mental_illness_type_depression", ["false"] + MISSING_VALUES),
         ],
     },
 }
