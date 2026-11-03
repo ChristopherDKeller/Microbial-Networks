@@ -2,3 +2,4 @@
 *.tsv
 *.duckdb
 .vscode
+__pycache__

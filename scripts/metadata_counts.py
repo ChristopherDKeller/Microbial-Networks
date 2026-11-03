@@ -4,6 +4,9 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
+import common.metadata_utils as utils
+from common.metadata_rules import RULES
+
 
 # ============================================================
 # 1. Dateien und Einstellungen
@@ -12,9 +15,10 @@ import pandas as pd
 DB_FILE = Path("data/AGP-metadata.duckdb")
 TABLE_NAME = "agp_metadata"
 
-COUNTS_FILE = Path("metadata_category_counts.tsv")
-SUMMARY_FILE = Path("metadata_category_summary.tsv")
-OVERVIEW_FILE = Path("metadata_category_overview.txt")
+RESULTS_DIR = Path("results/metadata_counts")
+COUNTS_FILE = RESULTS_DIR / "metadata_category_counts.tsv"
+SUMMARY_FILE = RESULTS_DIR / "metadata_category_summary.tsv"
+OVERVIEW_FILE = RESULTS_DIR / "metadata_category_overview.txt"
 
 COUNT_COLUMNS = [
     "category",
@@ -48,185 +52,8 @@ NON_INFORMATIVE_VALUES = {
 
 
 # ============================================================
-# 2. RULES
-# Reihenfolge Wichtig: Die erste passende Regel wird verwendet, um eine Kategorie zu gruppieren.
+# 2. Hilfsfunktionen
 # ============================================================
-
-RULES = [
-    # Ernährungserhebung
-    ("vioscreen", [r"^vioscreen_"]),
-
-    # Kopf
-    ("scalp_and_face", [r"scalp_current|facial"]),
-
-    # Participant metadata (PM)
-    ("pm_shared", [r"^pm_shared_"]),
-    ("pm_participation", [r"^pm_.*participation_reason"]),
-    ("pm_gastro", [r"^pm_gastro"]),
-    ("pm_lifestyle", [r"^pm_lifestyle"]),
-    ("pm_other", [r"^pm_"]),
-
-    # Allergien
-    ("food_allergies", [
-        r"allergic_",
-        r"seasonal",
-    ]),
-    ("non_food_allergies", [
-        r"non_food_allergies",
-    ]),
-
-    # Krankheiten und Gesundheit
-    ("mental_illness", [
-        r"mental_illness|epilepsy_or_seizure_disorder|"
-        r"depression_bipolar_schizophrenia|add_adhd|asd"
-    ]),
-    ("artificial_gi_disorder", [r"artificial_gi_disorder"]),
-    ("cancer", [r"cancer"]),
-    ("covid", [r"covid|coronavirus|sars.?cov.?2"]),
-    ("disease", [
-        r"disease|diagnos|clinical_condition|condition_",
-        r"diabetes|ibd|asthma|skin_condition|alzheimers|"
-        r"fungal_overgrowth|migraine|autoimmune|ibs|pku",
-    ]),
-    ("medication", [
-        r"medication|meds|prescription|antibiotic|"
-        r"supplement|contraceptive|multivitamin"
-    ]),
-    ("immunities", [r"flu_vaccine_date|chickenpox"]),
-    ("intolerances", [r"gluten|lactose"]),
-    ("gut_health", [
-        r"acid_reflux",
-        r"bowel_movement",
-        r"sibo",
-        r"cdiff",
-        r"coprophage",
-    ]),
-    ("medical_history", [
-        r"appendix_removed",
-        r"tonsils_removed",
-        r"thyroid",
-        r"subset_healthy",
-    ]),
-    ("reproductive_early_life", [
-        r"pregnant",
-        r"breastmilk",
-        r"fed_as_infant",
-        r"csection",
-    ]),
-
-    # Demografie und Lebensstil
-    ("demographics", [
-        r"(^|_)(age|sex|height|weight|bmi|race|ethnic|birth|lifestage)(_|$)"
-    ]),
-    ("lifestyle", [
-        r"smok|alcohol|drinks|stress|sleep|exercise|"
-        r"physical_activity|weekday_wake_time|weekend_wake_time|"
-        r"hours_outside|pool_frequency"
-    ]),
-    ("lifestyle_misc", [
-        r"^livingwith$",
-        r"^living_status$",
-        r"roommates",
-        r"last_move",
-        r"last_travel",
-        r"dominant_hand",
-        r"nail_biter",
-        r"vivid_dreams",
-        r"types_of_plants",
-        r"softener",
-    ]),
-    ("hygiene", [
-        r"deodorant_use|cosmetics_frequency|"
-        r"teethbrushing_frequency|flossing_frequency"
-    ]),
-
-    # Haustiere
-    ("pets", [
-        r"pet|dog|cat|animal_type|animal_gender|animal_origin"
-    ]),
-
-    # Ernährung außerhalb von Vioscreen
-    ("fermented", [r"fermented"]),
-    ("diet", [
-        r"diet|food|meal|fasting|fiber|fibre|nutrition",
-        r"whole_eggs",
-        r"olive_oil",
-        r"red_meat",
-        r"beet_frequency",
-        r"poultry_frequency",
-        r"fruit_frequency",
-        r"vegetable_frequency",
-        r"milk_cheese_frequency",
-        r"milk_substitute_frequency",
-        r"plant_protein_frequency",
-        r"whole_grain_frequency",
-        r"salted_snacks_frequency",
-        r"artificial_sweeteners",
-        r"high_fat_red_meat_frequency",
-        r"probiotic_frequency",
-        r"oils_frequency",
-        r"meat_eggs_frequency",
-        r"sugar_sweetened_drink_frequency",
-        r"sugary_sweets_frequency",
-        r"one_liter_of_water_a_day_frequency",
-        r"frozen_dessert_frequency",
-        r"consume_animal_products_abx",
-    ]),
-
-    # Proben- und Studieninformationen
-    ("sample_study", [
-        r"sample|study|collection|empo|run_accession|subject_id"
-    ]),
-
-    # Sample Information
-    ("sample", [
-        r"^host_|body|scientific_name|dna_extracted|"
-        r"physical_specimen_remaining|taxon_id"
-    ]),
-
-    # Location
-    ("location", [
-        r"longitude|latitude|country|region|geo|elevation|"
-        r"state|thdmi_cohort|^env_"
-    ]),
-
-    # Umwelt und Wohnumgebung
-    ("environment", [
-        r"^setting$",
-        r"water",
-    ]),
-
-    # Studien- und Kohorteninformationen
-    ("study_metadata", [
-        r"anonymized_name",
-        r"^title$",
-        r"^description$",
-        r"^public$",
-    ]),
-
-    # Weitere spezifische Themen
-    ("surf", [r"^surf"]),
-]
-
-# ============================================================
-# 3. Hilfsfunktionen
-# ============================================================
-
-def quote_identifier(name: str) -> str:
-    """Escape SQL identifiers such as column names."""
-    return '"' + name.replace('"', '""') + '"'
-
-
-def classify_category(category: str) -> str:
-    """Assign the first matching RULES group."""
-    name = category.casefold()
-
-    for group, patterns in RULES:
-        if any(re.search(pattern, name) for pattern in patterns):
-            return group
-
-    return "other"
-
 
 def is_informative(value) -> bool:
     """Determine whether a metadata value is informative."""
@@ -234,19 +61,6 @@ def is_informative(value) -> bool:
         return False
 
     return str(value).strip().casefold() not in NON_INFORMATIVE_VALUES
-
-
-def get_categories(con) -> list[str]:
-    """Read column names from DuckDB, excluding sample identifiers."""
-    columns = con.execute(
-        f"DESCRIBE {quote_identifier(TABLE_NAME)}"
-    ).fetchdf()["column_name"].tolist()
-
-    return [
-        c for c in columns
-        if c not in {"#SampleID", "sample_name"}
-    ]
-
 
 def get_group_order() -> dict[str, int]:
     """Preserve the group order defined by RULES."""
@@ -256,7 +70,6 @@ def get_group_order() -> dict[str, int]:
     }
     order["other"] = len(order)
     return order
-
 
 def write_overview(
     categories: list[str],
@@ -269,7 +82,7 @@ def write_overview(
     groups["other"] = []
 
     for category in categories:
-        groups[classify_category(category)].append(category)
+        groups[utils.classify_category(category)].append(category)
 
     with OVERVIEW_FILE.open("w", encoding="utf-8") as f:
         f.write("AGP METADATA OVERVIEW\n")
@@ -312,7 +125,7 @@ def write_overview(
 
 
 # ============================================================
-# 4. Daten aus DuckDB abfragen
+# 3. Daten aus DuckDB abfragen
 # ============================================================
 
 if not DB_FILE.exists():
@@ -323,17 +136,17 @@ if not DB_FILE.exists():
 con = duckdb.connect(str(DB_FILE), read_only=True)
 
 try:
-    categories = get_categories(con)
+    categories = utils.get_categories(con)
     print(f"Metadata categories: {len(categories)}")
 
     # One row per category and value.
     # INCLUDE NULLS ensures missing values are counted as a value group.
     # All metadata columns should be VARCHAR from the original import.
     excluded = ", ".join(
-        quote_identifier(c)
+        utils.quote_identifier(c)
         for c in ["#SampleID", "sample_name"]
         if c in con.execute(
-            f"DESCRIBE {quote_identifier(TABLE_NAME)}"
+            f"DESCRIBE {utils.quote_identifier(TABLE_NAME)}"
         ).fetchdf()["column_name"].tolist()
     )
 
@@ -347,7 +160,7 @@ try:
             category,
             value,
             COUNT(*) AS count
-        FROM {quote_identifier(TABLE_NAME)}
+        FROM {utils.quote_identifier(TABLE_NAME)}
         UNPIVOT INCLUDE NULLS (
             value FOR category IN ({columns_expression})
         )
@@ -358,7 +171,7 @@ try:
     counts_df = con.execute(query).fetchdf()
 
     total_samples = con.execute(
-        f"SELECT COUNT(*) FROM {quote_identifier(TABLE_NAME)}"
+        f"SELECT COUNT(*) FROM {utils.quote_identifier(TABLE_NAME)}"
     ).fetchone()[0]
 
 finally:
@@ -366,8 +179,9 @@ finally:
 
 
 # ============================================================
-# 5. Häufigkeiten und informative Samples berechnen
+# 4. Häufigkeiten und informative Samples berechnen
 # ============================================================
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 counts_df["count"] = counts_df["count"].astype("int64")
 
@@ -409,7 +223,7 @@ category_order = {
 group_order = get_group_order()
 
 summary_df["_group_order"] = summary_df["category"].map(
-    lambda c: group_order[classify_category(c)]
+    lambda c: group_order[utils.classify_category(c)]
 )
 summary_df["_category_order"] = summary_df["category"].map(
     category_order
@@ -429,7 +243,7 @@ summary_df.to_csv(
 
 
 # ============================================================
-# 6. Menschenlesbare Übersicht schreiben
+# 5. Menschenlesbare Übersicht schreiben
 # ============================================================
 
 write_overview(categories, summary_df)
