@@ -120,7 +120,6 @@ def write_overview(
                 f.write(
                     f"  {category:<48} "
                     f"informative={row['informative_samples']} "
-                    f"total={row['total_samples']} "
                 )
 
 

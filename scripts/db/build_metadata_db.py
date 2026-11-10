@@ -19,8 +19,6 @@ con = duckdb.connect(str(DB_PATH))
 
 try:
     # Import all columns as text to preserve metadata values.
-    # A unique sentinel prevents ordinary empty strings from being
-    # interpreted as SQL NULL during import.
     con.execute(
         """
         CREATE OR REPLACE TABLE agp_metadata AS
@@ -30,7 +28,7 @@ try:
             delim = '\\t',
             header = true,
             all_varchar = true,
-            nullstr = '__DUCKDB_NULL_SENTINEL_92817__'
+            nullstr = ''
         )
         """,
         [str(TSV_PATH.resolve())],

@@ -3,3 +3,5 @@
 *.duckdb
 .vscode
 __pycache__
+
+!requirements.txt
