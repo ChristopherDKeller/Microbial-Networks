@@ -44,7 +44,7 @@ CATEGORIES: dict[str, list[str]] = {
         # "age_cat",                   # redundant: binned version of age
         # "birth_year",                # redundant: age = collection year - birth year
         # "lifestage",                 # redundant: binned version of age
-        "bmi_cat",                     # BMI category (robust to outliers)
+        #"bmi_cat",                     # BMI category redundant: host_height / host_weight encode the same information
         # "host_height",               # redundant: encoded in BMI
         # "host_height_units",         # redundant: unit only
         # "host_weight",               # redundant: encoded in BMI
@@ -388,19 +388,21 @@ CATEGORIES: dict[str, list[str]] = {
 # TODO Numeric features (everything else is treated as categorical)
 # at the moment all disabled
 # --------------------------------------------------------------------------
-NUMERIC_FEATURES: set[str] = {
-    "host_age_normalized_years",
-    "host_age",            
-    "host_body_mass_index",
+NUMERIC_FEATURES = [
+    "host_age",
     "host_height",
     "host_weight",
-    "birth_year",
-}
+]
 
 
-# All active features are categorical for the first baseline.
-FEATURES = list(dict.fromkeys(
+CATEGORICAL_FEATURES = list(dict.fromkeys(
     feature
     for category_features in CATEGORIES.values()
     for feature in category_features
 ))
+
+FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
+FEATURES = [
+    f for f in FEATURES
+    if f not in {TARGET, GROUP_COL}
+]

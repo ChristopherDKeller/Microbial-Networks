@@ -2,9 +2,10 @@ import duckdb
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import make_column_transformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -13,8 +14,8 @@ from sklearn.metrics import (
     average_precision_score,
 )
 
-from features import FEATURES, TARGET, GROUP_COL
-from preprocessing import clean_missing_values
+from features import CATEGORICAL_FEATURES, FEATURES, NUMERIC_FEATURES, TARGET, GROUP_COL
+from preprocessing import clean_missing_values, clean_numeric_values
 
 
 # --------------------------------------------------
@@ -61,7 +62,11 @@ df = (
     .reset_index(drop=True)
 )
 
-X = clean_missing_values(df[feature_cols])
+# Preprocess categorical and numeric features separately, then combine them.
+X_cat = clean_missing_values(df[CATEGORICAL_FEATURES])
+X_num = clean_numeric_values(df[NUMERIC_FEATURES])
+
+X = pd.concat([X_cat, X_num], axis=1)
 y = df["y"]
 
 
@@ -88,14 +93,36 @@ X_train, X_test, y_train, y_test = train_test_split(
 # DECISION: Replace missing categorical values with the most frequent value.
 # DECISION: One-hot encode categorical features.
 # DECISION: Ignore categories that only occur in the test set.
-preprocessor = make_column_transformer(
-    (
-        make_pipeline(
-            SimpleImputer(strategy="most_frequent"),
-            OneHotEncoder(handle_unknown="ignore"),
+#preprocessor = make_column_transformer(
+#    (
+#        make_pipeline(
+#            SimpleImputer(strategy="most_frequent"),
+#            OneHotEncoder(handle_unknown="ignore"),
+#        ),
+#        feature_cols,
+#    ),
+#    remainder="drop",
+#)
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "categorical",
+            make_pipeline(
+                SimpleImputer(strategy="most_frequent"),
+                OneHotEncoder(handle_unknown="ignore"),
+            ),
+            CATEGORICAL_FEATURES,
         ),
-        feature_cols,
-    ),
+        (
+            "numeric",
+            make_pipeline(
+                SimpleImputer(strategy="median"),
+                StandardScaler(),
+            ),
+            NUMERIC_FEATURES,
+        ),
+    ],
     remainder="drop",
 )
 

@@ -199,19 +199,55 @@ queries = {
         SELECT host_body_site, body_site, COUNT(*) AS n
         FROM agp_metadata
         WHERE lower(trim(host_body_site)) = 'uberon:feces'
-        GROUP BY host_body_site, body_site
+        GROUP BY host_body_site, body_site;
     """,
     
-    "body_site_count": """
-        WITH filtered_samples AS (
-            SELECT *
+    "How many samples per subject": """
+        SELECT n_samples, COUNT(*) AS n_subjects
+        FROM (
+            SELECT host_subject_id, COUNT(*) AS n_samples
             FROM agp_metadata
             WHERE lower(trim(host_body_site)) = 'uberon:feces'
-        )
-        SELECT host_age , COUNT(*) AS n
-        FROM filtered_samples
-        GROUP BY host_age
+            AND host_subject_id IS NOT NULL
+            AND lower(trim(ibd)) = 'diagnosed by a medical professional (doctor, physician assistant)'
+            GROUP BY host_subject_id
+        ) AS per_subject
+        GROUP BY n_samples
+        ORDER BY n_samples;
     """,
+
+    "Age anomalies": """
+        SELECT host_age_normalized_years, host_age, birth_year
+        FROM agp_metadata
+        WHERE TRY_CAST(host_age_normalized_years AS NUMERIC) < 0 
+        OR TRY_CAST(host_age_normalized_years AS NUMERIC) > 100 
+        OR TRY_CAST(host_age AS NUMERIC) < 0 
+        OR TRY_CAST(host_age AS NUMERIC) > 100
+        OR lower(trim(host_age)) LIKE '%not%'
+        AND lower(trim(host_body_site)) = 'uberon:feces'
+        GROUP BY host_age_normalized_years, host_age, birth_year;
+    """,
+    
+    "Height anomalies": """
+        SELECT host_height
+        FROM agp_metadata
+        WHERE TRY_CAST(host_height AS NUMERIC) < 40 
+        OR TRY_CAST(host_height AS NUMERIC) > 200
+        OR lower(trim(host_height)) LIKE '%not%'
+        AND lower(trim(host_body_site)) = 'uberon:feces'
+        GROUP BY host_height;
+    """,
+    
+    "Weight anomalies": """
+        SELECT host_weight
+        FROM agp_metadata
+        WHERE TRY_CAST(host_weight AS NUMERIC) < 2 
+        OR TRY_CAST(host_weight AS NUMERIC) > 300
+        OR lower(trim(host_weight)) LIKE '%not%'
+        AND lower(trim(host_body_site)) = 'uberon:feces'
+        GROUP BY host_weight;
+    """,
+
 }
 
 try:

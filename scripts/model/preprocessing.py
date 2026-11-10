@@ -11,6 +11,12 @@ MISSING_VALUES = {
     "",
 }
 
+NUMERIC_RANGES = {
+    "host_age": (0, 120),
+    "host_height": (20, 230),
+    "host_weight": (2, 300),
+}
+
 def clean_missing_values(X: pd.DataFrame) -> pd.DataFrame:
     X = X.copy()
 
@@ -29,5 +35,17 @@ def clean_missing_values(X: pd.DataFrame) -> pd.DataFrame:
         )
 
         X.loc[mask, col] = np.nan
+
+    return X
+
+def clean_numeric_values(X: pd.DataFrame) -> pd.DataFrame:
+    X = X.copy()
+
+    for col, (lower, upper) in NUMERIC_RANGES.items():
+        X[col] = pd.to_numeric(X[col], errors="coerce")
+
+        # Unplausible Werte als fehlend behandeln
+        invalid = (X[col] < lower) | (X[col] > upper)
+        X.loc[invalid, col] = np.nan
 
     return X
